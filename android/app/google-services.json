@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "669023696497",
+    "project_id": "glutensearch-55e0d",
+    "storage_bucket": "glutensearch-55e0d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:669023696497:android:5ec27808f60a1d10d88dd0",
+        "android_client_info": {
+          "package_name": "com.example.gluten_search"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDGNtxLmaVRykm_huqmqYMVa2UP14BL6BM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
