@@ -41,6 +41,28 @@ class CartNotifier extends StateNotifier<Cart> {
     _userDataRepository.updateCart(_userId, state);
   }
 
+  void updateItemQuantity(String productId, int newQuantity) {
+    if (newQuantity <= 0) {
+      removeItem(productId);
+      return;
+    }
+
+    final updatedItems = state.items.map((item) {
+      if (item.product.id == productId) {
+        return item.copyWith(quantity: newQuantity);
+      }
+      return item;
+    }).toList();
+
+    state = Cart(
+      id: state.id,
+      items: updatedItems,
+      lastModified: DateTime.now(),
+    );
+
+    _userDataRepository.updateCart(_userId, state);
+  }
+
   void removeItem(String productId) {
     final updatedItems = state.items
         .where((item) => item.product.id != productId)

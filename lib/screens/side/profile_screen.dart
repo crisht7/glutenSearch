@@ -611,14 +611,14 @@ class _RegisteredUserView extends ConsumerWidget {
       ),
     );
   }
+}
 
-  void _showAllFavorites(BuildContext context, List<Product> favorites) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => _FavoritesListScreen(favorites: favorites),
-      ),
-    );
-  }
+void _showAllFavorites(BuildContext context, List<Product> favorites) {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) => _FavoritesListScreen(favorites: favorites),
+    ),
+  );
 }
 
 class _FavoritesListScreen extends StatelessWidget {

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
-import '../../models/cart.dart';
-import '../../models/cart_item.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/auth_provider.dart';
 
@@ -148,18 +146,15 @@ class CartScreen extends ConsumerWidget {
                                     children: [
                                       IconButton(
                                         onPressed: () {
-                                          if (item.quantity > 1) {
-                                            item.quantity--;
-                                            ref
-                                                .read(
-                                                  cartNotifierProvider.notifier,
-                                                )
-                                                .state = ref
-                                                .read(cartNotifierProvider)
-                                                .copyWith(
-                                                  lastModified: DateTime.now(),
-                                                );
-                                          }
+                                          // Usar el notifier correctamente en el evento
+                                          ref
+                                              .read(
+                                                cartNotifierProvider.notifier,
+                                              )
+                                              .updateItemQuantity(
+                                                item.product.id,
+                                                item.quantity - 1,
+                                              );
                                         },
                                         icon: const Icon(
                                           Icons.remove_circle_outline,
@@ -189,21 +184,15 @@ class CartScreen extends ConsumerWidget {
                                       ),
                                       IconButton(
                                         onPressed: () {
-                                          item.quantity++;
-                                          // Forzar actualización del estado
+                                          // Usar el notifier correctamente en el evento
                                           ref
                                               .read(
                                                 cartNotifierProvider.notifier,
                                               )
-                                              .state = Cart(
-                                            id: ref
-                                                .read(cartNotifierProvider)
-                                                .id,
-                                            items: ref
-                                                .read(cartNotifierProvider)
-                                                .items,
-                                            lastModified: DateTime.now(),
-                                          );
+                                              .updateItemQuantity(
+                                                item.product.id,
+                                                item.quantity + 1,
+                                              );
                                         },
                                         icon: const Icon(
                                           Icons.add_circle_outline,
@@ -258,7 +247,7 @@ class CartScreen extends ConsumerWidget {
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
+                        color: Colors.grey.withValues(alpha: 0.2),
                         spreadRadius: 1,
                         blurRadius: 5,
                         offset: const Offset(0, -3),
@@ -400,17 +389,6 @@ class CartScreen extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-// Extension para copyWith en Cart
-extension CartExtension on Cart {
-  Cart copyWith({String? id, List<CartItem>? items, DateTime? lastModified}) {
-    return Cart(
-      id: id ?? this.id,
-      items: items ?? this.items,
-      lastModified: lastModified ?? this.lastModified,
     );
   }
 }

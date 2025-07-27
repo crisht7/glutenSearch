@@ -14,10 +14,13 @@ class CartItem {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'product': (product as dynamic)
-          .toJson(), // Necesitamos un toJson en Product
-      'quantity': quantity,
-    };
+    return {'product': (product as dynamic).toJson(), 'quantity': quantity};
+  }
+
+  CartItem copyWith({Product? product, int? quantity}) {
+    return CartItem(
+      product: product ?? this.product,
+      quantity: quantity ?? this.quantity,
+    );
   }
 }

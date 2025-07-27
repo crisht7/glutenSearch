@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart'; // Generado por FlutterFire CLI
 import 'app.dart'; // Importamos nuestro widget principal
-import 'providers/auth_provider.dart';
 import 'providers/product_provider.dart';
 import 'providers/repository_providers.dart';
 
