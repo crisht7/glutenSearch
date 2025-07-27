@@ -72,4 +72,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'glutensearch-55e0d.firebasestorage.app',
     iosBundleId: 'com.example.glutenSearch',
   );
+
 }
