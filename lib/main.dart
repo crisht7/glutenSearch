@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart'; // Generado por FlutterFire CLI
+import 'app.dart'; // Importamos nuestro widget principal
 import 'providers/auth_provider.dart';
 import 'providers/product_provider.dart';
 import 'providers/repository_providers.dart';
@@ -48,44 +49,7 @@ Future<void> main() async {
     ProviderScope(
       parent:
           container, // Usamos el mismo container para no perder el estado inicial
-      child: const MyApp(),
+      child: const GlutenSearchApp(),
     ),
   );
-}
-
-// Una App mínima para tener una base sobre la que construir la UI
-class MyApp extends ConsumerWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Observamos el estado de la autenticación para mostrar una UI u otra.
-    // Este es el punto de partida para tu router.
-    final authState = ref.watch(authStateChangesProvider);
-
-    return MaterialApp(
-      title: 'Gluten Free App',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
-        useMaterial3: true,
-      ),
-      home: Scaffold(
-        body: Center(
-          // .when() es perfecto para manejar los estados de un provider asíncrono
-          child: authState.when(
-            data: (user) {
-              if (user != null) {
-                return Text('Sesión iniciada como: ${user.uid}');
-              } else {
-                return const Text('No hay sesión iniciada.');
-              }
-            },
-            loading: () => const CircularProgressIndicator(),
-            error: (error, stackTrace) => Text('Error: $error'),
-          ),
-        ),
-      ),
-    );
-  }
 }

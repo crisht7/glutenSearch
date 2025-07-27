@@ -1,30 +1,42 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-import 'package:gluten_search/main.dart';
+import 'package:gluten_search/app.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  // Configuración inicial para los tests
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Mock Firebase para tests (evita inicialización real)
+    // En tests, Firebase no se inicializa automáticamente
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('GlutenSearchApp should build without crashing', (
+    WidgetTester tester,
+  ) async {
+    // Crear un ProviderScope para Riverpod en el test
+    await tester.pumpWidget(const ProviderScope(child: GlutenSearchApp()));
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify that the app builds successfully with MaterialApp
+    expect(find.byType(MaterialApp), findsOneWidget);
+
+    // Verify that ProviderScope is present
+    expect(find.byType(ProviderScope), findsOneWidget);
+  });
+
+  testWidgets('App should have proper theme configuration', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const ProviderScope(child: GlutenSearchApp()));
+
+    // Get the MaterialApp widget
+    final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
+
+    // Verify that theme is configured
+    expect(materialApp.theme, isNotNull);
+    expect(materialApp.darkTheme, isNotNull);
   });
 }
