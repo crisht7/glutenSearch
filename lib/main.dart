@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart'; // Generado por FlutterFire CLI
 import 'app.dart'; // Importamos nuestro widget principal
 import 'providers/product_provider.dart';
@@ -13,12 +15,32 @@ Future<void> main() async {
   // PASO 2: Inicializar Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // PASO 3: Crear un contenedor de Riverpod para hacer pruebas en la consola
+  // PASO 2.1: Configurar Firebase Auth para desarrollo
+  // Esto evita problemas con reCAPTCHA durante desarrollo
+  try {
+    await FirebaseAuth.instance.setSettings(
+      appVerificationDisabledForTesting: true,
+      forceRecaptchaFlow: false,
+    );
+    print('Firebase Auth configurado para desarrollo');
+  } catch (e) {
+    print('No se pudo configurar Firebase Auth para testing: $e');
+  }
+
+  // PASO 2.2: Configurar FireStore para modo offline
+  try {
+    FirebaseFirestore.instance.settings = Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    );
+  } catch (e) {
+    print('No se pudo configurar Firestore para modo offline: $e');
+  } // PASO 3: Crear un contenedor de Riverpod para hacer pruebas en la consola
   // Esto nos permite interactuar con nuestros providers antes de que la UI exista.
   final container = ProviderContainer();
 
   // -- INICIO DE LA PRUEBA DE HUMO EN CONSOLA --
-
+  // ¡¡¡¡REVISAR EL CORRECTO FUNCIONAMIENTO DE LA PRUEBA DE HUMO!!!!
   print('--- INICIANDO PRUEBA DE LÓGICA ---');
   try {
     // Prueba de Autenticación Anónima

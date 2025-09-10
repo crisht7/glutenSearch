@@ -4,4 +4,16 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    
+    <application>
+        <!-- Registro para SafetyNet API (necesario para reCAPTCHA) -->
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
+        
+        <!-- Configuración para no verificar problemas de SSL en desarrollo -->
+        <meta-data
+            android:name="firebase_performance_collection_deactivated"
+            android:value="true" />
+    </application>
 </manifest>

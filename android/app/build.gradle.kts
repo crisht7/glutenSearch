@@ -17,6 +17,9 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        
+        // Configuración de multidex (necesaria para APIs < 21 con muchas dependencias)
+        multiDexEnabled = true
     }
 
     compileOptions {
@@ -32,6 +35,11 @@ android {
         release {
             signingConfig = signingConfigs.getByName("debug") // Cambia a release si tienes un signing config
         }
+        debug {
+            // Habilitar opciones de depuración específicas
+            isDebuggable = true
+            isMinifyEnabled = false
+        }
     }
 }
 
@@ -43,4 +51,6 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.android.gms:play-services-safetynet:18.0.1")
+    implementation("androidx.multidex:multidex:2.0.1")
 }

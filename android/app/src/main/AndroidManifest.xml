@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Permiso de Internet para la aplicación en producción -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    
     <application
         android:label="gluten_search"
         android:name="${applicationName}"
@@ -30,6 +33,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        
+        <!-- SafetyNet API (necesario para reCAPTCHA) -->
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

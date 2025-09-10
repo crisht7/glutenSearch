@@ -385,16 +385,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   String _getErrorMessage(String error) {
-    if (error.contains('email-already-in-use')) {
-      return 'Ya existe una cuenta con este email';
+    if (error.contains('email-already-in-use') || error.contains('already in use')) {
+      return 'Ya existe una cuenta con este email. Por favor, inicia sesión o usa otro correo.';
     } else if (error.contains('invalid-email')) {
       return 'El formato del email no es válido';
     } else if (error.contains('weak-password')) {
       return 'La contraseña es muy débil';
     } else if (error.contains('network-request-failed')) {
       return 'Error de conexión. Verifica tu internet';
+    } else if (error.contains('operation-not-allowed')) {
+      return 'El registro por email está deshabilitado. Contacta al soporte.';
+    } else if (error.contains('reCAPTCHA')) {
+      return 'Error de verificación de seguridad. Intenta nuevamente.';
     } else {
-      return 'Error al crear la cuenta. Intenta nuevamente';
+      return 'Error al crear la cuenta: $error';
     }
   }
 }

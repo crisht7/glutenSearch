@@ -42,53 +42,80 @@ class UserDataRepository {
   /// Obtiene el perfil completo de un usuario registrado desde Firestore.
   Future<RegisteredUser?> getRegisteredUserProfile(String userId) async {
     try {
-      // 1. Obtener el documento principal del usuario
-      final userDoc = await _usersCollection().doc(userId).get();
-      if (!userDoc.exists || userDoc.data() == null) {
-        // Puede que el documento aún no tenga datos de perfil (nombre/email)
+      // Si no hay conexión o si la base de datos no existe,
+      // creamos un perfil de usuario básico para no bloquear la app
+      if (userId.isEmpty) {
         return null;
       }
-      final userData = userDoc.data()!;
 
-      // 2. Obtener los productos favoritos de la sub-colección
-      final favoritesSnapshot = await _usersCollection()
-          .doc(userId)
-          .collection('favorites')
-          .get();
-      final favoriteProducts = favoritesSnapshot.docs
-          .map((doc) => Product.fromJson(doc.data()))
-          .toList();
+      try {
+        // 1. Obtener el documento principal del usuario
+        final userDoc = await _usersCollection().doc(userId).get();
+        if (!userDoc.exists || userDoc.data() == null) {
+          // Si no existe el documento, crear uno básico
+          return RegisteredUser(
+            uid: userId,
+            email: '', // No tenemos esta información sin Firestore
+            name: '', // No tenemos esta información sin Firestore
+            cart: Cart.empty(userId),
+            favoriteProducts: [],
+            savedCarts: [],
+          );
+        }
 
-      // 3. Obtener los carritos guardados de la sub-colección
-      final savedCartsSnapshot = await _usersCollection()
-          .doc(userId)
-          .collection('savedCarts')
-          .get();
-      final savedCarts = savedCartsSnapshot.docs
-          .map((doc) => Cart.fromJson(doc.data()))
-          .toList();
+        final userData = userDoc.data()!;
 
-      // 4. Obtener el carrito activo (si existe)
-      final activeCartData = userData['activeCart'];
-      final activeCart = activeCartData != null
-          ? Cart.fromJson(activeCartData)
-          : Cart.empty(userId);
+        // 2. Obtener los productos favoritos de la sub-colección
+        final favoritesSnapshot = await _usersCollection()
+            .doc(userId)
+            .collection('favorites')
+            .get();
+        final favoriteProducts = favoritesSnapshot.docs
+            .map((doc) => Product.fromJson(doc.data()))
+            .toList();
 
-      // 5. Construir y devolver el objeto RegisteredUser completo
-      return RegisteredUser(
-        uid: userId,
-        email:
-            userData['email'] ??
-            '', // Asumimos que el email se guarda al registrar
-        name:
-            userData['name'] ??
-            '', // Asumimos que el nombre se guarda al registrar
-        cart: activeCart,
-        favoriteProducts: favoriteProducts,
-        savedCarts: savedCarts,
-      );
+        // 3. Obtener los carritos guardados de la sub-colección
+        final savedCartsSnapshot = await _usersCollection()
+            .doc(userId)
+            .collection('savedCarts')
+            .get();
+        final savedCarts = savedCartsSnapshot.docs
+            .map((doc) => Cart.fromJson(doc.data()))
+            .toList();
+
+        // 4. Obtener el carrito activo (si existe)
+        final activeCartData = userData['activeCart'];
+        final activeCart = activeCartData != null
+            ? Cart.fromJson(activeCartData)
+            : Cart.empty(userId);
+
+        // 5. Construir y devolver el objeto RegisteredUser completo
+        return RegisteredUser(
+          uid: userId,
+          email:
+              userData['email'] ??
+              '', // Asumimos que el email se guarda al registrar
+          name:
+              userData['name'] ??
+              '', // Asumimos que el nombre se guarda al registrar
+          cart: activeCart,
+          favoriteProducts: favoriteProducts,
+          savedCarts: savedCarts,
+        );
+      } catch (e) {
+        print('Error getting user profile: $e');
+        // Si hay un error con Firestore, creamos un perfil básico
+        return RegisteredUser(
+          uid: userId,
+          email: '',
+          name: '',
+          cart: Cart.empty(userId),
+          favoriteProducts: [],
+          savedCarts: [],
+        );
+      }
     } catch (e) {
-      print('Error getting user profile: $e');
+      print('Error crítico en getRegisteredUserProfile: $e');
       return null;
     }
   }

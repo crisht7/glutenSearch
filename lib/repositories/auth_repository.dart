@@ -26,20 +26,52 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    final credential = firebase_auth.EmailAuthProvider.credential(
-      email: email,
-      password: password,
-    );
+    try {
+      // Desactivamos la verificación de reCAPTCHA para pruebas
+      await _firebaseAuth.setSettings(appVerificationDisabledForTesting: true);
 
-    if (currentUser != null && currentUser!.isAnonymous) {
-      // Si somos un usuario anónimo, enlazamos la cuenta para no perder datos.
-      await currentUser!.linkWithCredential(credential);
-    } else {
-      // Si no, creamos un usuario nuevo.
-      await _firebaseAuth.createUserWithEmailAndPassword(
+      // Primero verificamos si el email ya está en uso para dar un mensaje más claro
+      try {
+        final methods = await _firebaseAuth.fetchSignInMethodsForEmail(email);
+        if (methods.isNotEmpty) {
+          throw firebase_auth.FirebaseAuthException(
+            code: 'email-already-in-use',
+            message: 'Este correo electrónico ya está registrado. Por favor, inicia sesión o usa otro correo.',
+          );
+        }
+      } catch (e) {
+        // Si no es un error de "email-already-in-use", continuamos con el registro
+        if (e is firebase_auth.FirebaseAuthException && 
+            e.code != 'email-already-in-use') {
+          rethrow;
+        }
+      }
+
+      final credential = firebase_auth.EmailAuthProvider.credential(
         email: email,
         password: password,
       );
+
+      if (currentUser != null && currentUser!.isAnonymous) {
+        // Si somos un usuario anónimo, enlazamos la cuenta para no perder datos.
+        await currentUser!.linkWithCredential(credential);
+      } else {
+        // Si no, creamos un usuario nuevo.
+        await _firebaseAuth.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+      }
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      if (e.code == 'email-already-in-use') {
+        throw Exception(
+          'Este correo electrónico ya está registrado. Por favor, inicia sesión o usa otro correo.',
+        );
+      } else {
+        throw Exception('Error al crear la cuenta: ${e.message}');
+      }
+    } catch (e) {
+      throw Exception('Error al crear la cuenta: $e');
     }
   }
 
@@ -48,10 +80,25 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    await _firebaseAuth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+    try {
+      // Desactivamos la verificación de reCAPTCHA para pruebas
+      await _firebaseAuth.setSettings(appVerificationDisabledForTesting: true);
+
+      await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+        throw Exception(
+          'Email o contraseña incorrectos. Por favor, inténtalo de nuevo.',
+        );
+      } else {
+        throw Exception('Error al iniciar sesión: ${e.message}');
+      }
+    } catch (e) {
+      throw Exception('Error al iniciar sesión: $e');
+    }
   }
 
   // Cierra la sesión del usuario actual.

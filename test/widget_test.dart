@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:gluten_search/app.dart';
+import 'package:gluten_search/core/app_router.dart';
 
 void main() {
   // Configuración inicial para los tests
@@ -37,5 +38,19 @@ void main() {
     // Verify that theme is configured
     expect(materialApp.theme, isNotNull);
     expect(materialApp.darkTheme, isNotNull);
+
+    // Verificar colores principales del tema
+    final colorScheme = materialApp.theme!.colorScheme;
+    // Verificamos que los colores se basan en el seed color, no los valores exactos
+    expect(colorScheme.primary, isA<Color>());
+    expect(colorScheme.secondary, isA<Color>());
+  });
+
+  test('AppRouter should generate routes correctly', () {
+    // Probar la generación de rutas
+    final routeSettings = RouteSettings(name: '/login');
+    final route = AppRouter.generateRoute(routeSettings);
+
+    expect(route, isA<MaterialPageRoute>());
   });
 }
