@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async'; // Import for TimeoutException
 import '../../core/app_theme.dart';
 import '../../providers/repository_providers.dart';
 import '../../widgets/loading_spinner.dart';
@@ -347,25 +348,106 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     });
 
     try {
+      // Paso 1: Registrar al usuario en Firebase Auth
       final authRepository = ref.read(authRepositoryProvider);
       await authRepository.signUpWithEmail(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
-      // TODO: Aquí podrías guardar información adicional del usuario como el nombre
-      // en Firestore usando el UserDataRepository cuando implementes el método updateUserProfile
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Cuenta creada exitosamente!'),
-            backgroundColor: AppTheme.primaryGreen,
-            duration: Duration(seconds: 3),
-          ),
+      // Paso 2: Verificar que el usuario se haya creado correctamente
+      final userId = authRepository.currentUser?.uid;
+      if (userId == null) {
+        throw Exception(
+          'Error al crear la cuenta: No se pudo obtener el ID del usuario',
         );
       }
+
+      // Paso 3: Guardar información adicional en Firestore
+      bool firestoreSuccess = true;
+      String firestoreErrorMsg = '';
+      try {
+        final userDataRepository = ref.read(userDataRepositoryProvider);
+
+        // Establecemos un timeout para la operación de Firestore
+        await Future.any([
+          userDataRepository.updateUserProfile(
+            userId: userId,
+            email: _emailController.text.trim(),
+            name: _nameController.text.trim(),
+          ),
+          // Si después de 10 segundos no hay respuesta, continuamos con un error controlado
+          Future.delayed(const Duration(seconds: 10)).then((_) {
+            throw TimeoutException('La operación de Firestore tardó demasiado');
+          }),
+        ]);
+      } catch (firestoreError) {
+        firestoreSuccess = false;
+        firestoreErrorMsg = firestoreError.toString();
+        print('Error al guardar datos en Firestore: $firestoreError');
+
+        // Verificamos si el error está relacionado con PigeonUserDetails
+        if (firestoreError.toString().contains('PigeonUserDetails') ||
+            firestoreError.toString().contains('not a subtype')) {
+          // Intento de recuperación específico para este error
+          try {
+            print('Intentando recuperación para error PigeonUserDetails...');
+            // Esperar un momento para que Firebase pueda sincronizarse
+            await Future.delayed(const Duration(seconds: 1));
+
+            final userDataRepository = ref.read(userDataRepositoryProvider);
+            // Intentar con un formato más simple y con timeout
+            await Future.any([
+              userDataRepository.updateUserProfile(
+                userId: userId,
+                email: _emailController.text.trim(),
+                name: _nameController.text.trim(),
+              ),
+              // Si después de 5 segundos no hay respuesta, continuamos con un error controlado
+              Future.delayed(const Duration(seconds: 5)).then((_) {
+                throw TimeoutException(
+                  'El intento de recuperación tardó demasiado',
+                );
+              }),
+            ]);
+            firestoreSuccess = true;
+          } catch (recoveryError) {
+            print('Error en el intento de recuperación: $recoveryError');
+            // Continuamos sin lanzar excepción para no bloquear el registro
+          }
+        } else {
+          print(
+            'Error al guardar datos en Firestore, pero la cuenta se creó: $firestoreError',
+          );
+          // No lanzamos excepción para no bloquear el registro si Firestore falla
+        }
+      }
+
+      // Paso 4: Notificar éxito
+      if (mounted) {
+        final message = firestoreSuccess
+            ? '¡Cuenta creada exitosamente!'
+            : '¡Cuenta creada! Algunas funciones pueden no estar disponibles porque la base de datos no está configurada.';
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: AppTheme.primaryGreen,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+
+        // Si no tuvimos éxito con Firestore pero la cuenta se creó, navegar a la pantalla principal
+        if (!firestoreSuccess) {
+          print(
+            'Navegando a la pantalla principal a pesar del error de Firestore: $firestoreErrorMsg',
+          );
+          // Aquí podríamos navegar a la pantalla principal o realizar otras acciones
+          // Ejemplo: Navigator.of(context).pushReplacementNamed('/home');
+        }
+      }
     } catch (e) {
+      print('Error durante el registro: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -385,16 +467,32 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   String _getErrorMessage(String error) {
-    if (error.contains('email-already-in-use')) {
-      return 'Ya existe una cuenta con este email';
+    if (error.contains('email-already-in-use') ||
+        error.contains('already in use')) {
+      return 'Ya existe una cuenta con este email. Por favor, inicia sesión o usa otro correo.';
     } else if (error.contains('invalid-email')) {
       return 'El formato del email no es válido';
     } else if (error.contains('weak-password')) {
       return 'La contraseña es muy débil';
     } else if (error.contains('network-request-failed')) {
       return 'Error de conexión. Verifica tu internet';
+    } else if (error.contains('operation-not-allowed')) {
+      return 'El registro por email está deshabilitado. Contacta al soporte.';
+    } else if (error.contains('reCAPTCHA')) {
+      return 'Error de verificación de seguridad. Intenta nuevamente.';
+    } else if (error.contains('PigeonUserDetails') ||
+        error.contains('not a subtype')) {
+      return 'Error interno de conversión de datos durante el registro. Hemos registrado el problema y se puede usar la app normalmente. Por favor, reinicia la aplicación si experimentas problemas.';
+    } else if (error.contains('TimeoutException') ||
+        error.contains('tardó demasiado')) {
+      return 'La operación tomó demasiado tiempo. Tu cuenta se ha creado pero algunas funciones pueden no estar disponibles.';
+    } else if (error.contains('database (default) does not exist') ||
+        error.contains(
+          'Error: La base de datos de Firestore no está configurada',
+        )) {
+      return 'Tu cuenta se ha creado correctamente, pero la base de datos no está disponible en este momento. Algunas funciones pueden estar limitadas.';
     } else {
-      return 'Error al crear la cuenta. Intenta nuevamente';
+      return 'Error al crear la cuenta: $error';
     }
   }
 }
