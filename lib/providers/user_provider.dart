@@ -9,7 +9,7 @@ import 'auth_provider.dart';
 // El AsyncNotifier que gestiona el estado asíncrono del perfil del usuario.
 class UserProfileNotifier extends AsyncNotifier<RegisteredUser?> {
   @override
-  FutureOr<RegisteredUser?> build() {
+  FutureOr<RegisteredUser?> build() async {
     final authState = ref.watch(authStateChangesProvider);
     final userId = authState.value?.uid;
 
@@ -32,7 +32,23 @@ class UserProfileNotifier extends AsyncNotifier<RegisteredUser?> {
     // Para usuarios registrados, intentamos obtener su perfil de Firestore
     try {
       final userDataRepository = ref.watch(userDataRepositoryProvider);
-      return userDataRepository.getRegisteredUserProfile(userId);
+      final userProfile = await userDataRepository.getRegisteredUserProfile(
+        userId,
+      );
+
+      // Si no se pudo obtener el perfil o hay algún error, creamos un perfil básico
+      if (userProfile == null) {
+        return RegisteredUser(
+          uid: userId,
+          email: authState.value?.email ?? '',
+          name: '',
+          cart: Cart.empty(userId),
+          favoriteProducts: [],
+          savedCarts: [],
+        );
+      }
+
+      return userProfile;
     } catch (e) {
       // Si hay algún error con Firestore, creamos un perfil básico
       print('Error al obtener perfil de usuario: $e');

@@ -132,20 +132,49 @@ class Product {
 
   /// Factory mejorado para crear un Producto desde el JSON de Open Food Facts
   factory Product.fromJson(Map<String, dynamic> json) {
-    return Product(
-      id: _extractId(json),
-      name: _extractName(json),
-      brands: _extractBrands(json),
-      imageUrl: _extractImageUrl(json),
-      ingredients: _extractIngredients(json),
-      allergens: _extractAllergens(json),
-      stores: _extractStores(json),
-      nutritionGrade: json['nutrition_grade_fr'] as String?,
-      category: _extractCategory(json),
-      nutriments: json['nutriments'] as Map<String, dynamic>?,
-      labels: _extractLabels(json),
-      rating: _extractRating(json),
-    );
+    try {
+      // Primero asegurar que los datos de JSON son válidos
+      Map<String, dynamic> safeJson = Map<String, dynamic>.from(json);
+
+      // Manejar 'nutriments' con cuidado - podría no ser un Map
+      Map<String, dynamic>? nutriments;
+      if (json['nutriments'] != null) {
+        if (json['nutriments'] is Map) {
+          // Intenta convertir a Map<String, dynamic>
+          try {
+            nutriments = Map<String, dynamic>.from(json['nutriments'] as Map);
+          } catch (e) {
+            print('Error convirtiendo nutriments: $e');
+            nutriments = null;
+          }
+        }
+      }
+
+      return Product(
+        id: _extractId(safeJson),
+        name: _extractName(safeJson),
+        brands: _extractBrands(safeJson),
+        imageUrl: _extractImageUrl(safeJson),
+        ingredients: _extractIngredients(safeJson),
+        allergens: _extractAllergens(safeJson),
+        stores: _extractStores(safeJson),
+        nutritionGrade: json['nutrition_grade_fr']?.toString(),
+        category: _extractCategory(safeJson),
+        nutriments: nutriments,
+        labels: _extractLabels(safeJson),
+        rating: _extractRating(safeJson),
+      );
+    } catch (e) {
+      print('Error en Product.fromJson: $e');
+      // Devolver un producto con datos mínimos en caso de error
+      return Product(
+        id: 'error-${DateTime.now().millisecondsSinceEpoch}',
+        name: 'Error al cargar producto',
+        allergens: [],
+        stores: [],
+        labels: [],
+      );
+    }
   }
 
   static String _extractId(Map<String, dynamic> json) {
@@ -212,66 +241,116 @@ class Product {
   static List<String> _extractAllergens(Map<String, dynamic> json) {
     final allergens = <String>[];
 
-    // Extraer de diferentes campos posibles
-    final allergensTags = json['allergens_tags'] as List<dynamic>?;
-    final allergensFromIngredients =
-        json['allergens_from_ingredients'] as String?;
-    final allergensFromUser = json['allergens_from_user'] as String?;
-
-    if (allergensTags != null) {
-      allergens.addAll(allergensTags.map((e) => e.toString()));
+    // Manejar con cuidado el caso de allergens_tags que podría no ser una lista
+    try {
+      final allergensTags = json['allergens_tags'];
+      if (allergensTags is List) {
+        allergens.addAll(allergensTags.map((e) => e.toString()));
+      }
+    } catch (e) {
+      print('Error extrayendo allergens_tags: $e');
     }
 
-    if (allergensFromIngredients != null &&
-        allergensFromIngredients.isNotEmpty) {
-      allergens.add(allergensFromIngredients);
+    // Extraer alergenos de ingredientes
+    try {
+      final allergensFromIngredients = json['allergens_from_ingredients'];
+      if (allergensFromIngredients is String &&
+          allergensFromIngredients.isNotEmpty) {
+        allergens.add(allergensFromIngredients);
+      }
+    } catch (e) {
+      print('Error extrayendo allergens_from_ingredients: $e');
     }
 
-    if (allergensFromUser != null && allergensFromUser.isNotEmpty) {
-      allergens.add(allergensFromUser);
+    // Extraer alergenos del usuario
+    try {
+      final allergensFromUser = json['allergens_from_user'];
+      if (allergensFromUser is String && allergensFromUser.isNotEmpty) {
+        allergens.add(allergensFromUser);
+      }
+    } catch (e) {
+      print('Error extrayendo allergens_from_user: $e');
     }
 
-    return allergens.map((a) => a.replaceAll('en:', '')).toList();
+    // Si después de todo no hay alérgenos, devolver una lista vacía
+    if (allergens.isEmpty) {
+      return [];
+    }
+
+    return allergens.map((a) => a.toString().replaceAll('en:', '')).toList();
   }
 
   static List<String> _extractStores(Map<String, dynamic> json) {
     final stores = <String>[];
 
-    final storesTags = json['stores_tags'] as List<dynamic>?;
-    final storesString = json['stores'] as String?;
-
-    if (storesTags != null) {
-      stores.addAll(storesTags.map((e) => e.toString().replaceAll('en:', '')));
+    try {
+      final storesTags = json['stores_tags'];
+      if (storesTags is List) {
+        stores.addAll(
+          storesTags.map((e) => e.toString().replaceAll('en:', '')),
+        );
+      }
+    } catch (e) {
+      print('Error extrayendo stores_tags: $e');
     }
 
-    if (storesString != null && storesString.isNotEmpty) {
-      stores.addAll(storesString.split(',').map((s) => s.trim()));
+    try {
+      final storesString = json['stores'];
+      if (storesString is String && storesString.isNotEmpty) {
+        stores.addAll(storesString.split(',').map((s) => s.trim()));
+      }
+    } catch (e) {
+      print('Error extrayendo stores: $e');
     }
 
     return stores.where((s) => s.isNotEmpty).toList();
   }
 
   static String? _extractCategory(Map<String, dynamic> json) {
-    final categories = json['categories_tags'] as List<dynamic>?;
-    if (categories != null && categories.isNotEmpty) {
-      // Tomar la categoría más específica (última en la lista)
-      return categories.last.toString();
+    try {
+      final categories = json['categories_tags'];
+      if (categories is List && categories.isNotEmpty) {
+        // Tomar la categoría más específica (última en la lista)
+        return categories.last.toString();
+      }
+    } catch (e) {
+      print('Error extrayendo categories_tags: $e');
     }
-    return json['categories'] as String?;
+
+    try {
+      final categoriesStr = json['categories'];
+      if (categoriesStr is String && categoriesStr.isNotEmpty) {
+        return categoriesStr;
+      }
+    } catch (e) {
+      print('Error extrayendo categories: $e');
+    }
+
+    return null;
   }
 
   static List<String> _extractLabels(Map<String, dynamic> json) {
     final labels = <String>[];
 
-    final labelsTags = json['labels_tags'] as List<dynamic>?;
-    if (labelsTags != null) {
-      labels.addAll(labelsTags.map((e) => e.toString().replaceAll('en:', '')));
+    try {
+      final labelsTags = json['labels_tags'];
+      if (labelsTags is List) {
+        labels.addAll(
+          labelsTags.map((e) => e.toString().replaceAll('en:', '')),
+        );
+      }
+    } catch (e) {
+      print('Error extrayendo labels_tags: $e');
     }
 
     // Añadir etiquetas específicas relevantes
-    final labelsString = json['labels'] as String?;
-    if (labelsString != null) {
-      labels.addAll(labelsString.split(',').map((s) => s.trim()));
+    try {
+      final labelsString = json['labels'];
+      if (labelsString is String && labelsString.isNotEmpty) {
+        labels.addAll(labelsString.split(',').map((s) => s.trim()));
+      }
+    } catch (e) {
+      print('Error extrayendo labels: $e');
     }
 
     return labels.where((l) => l.isNotEmpty).toList();
