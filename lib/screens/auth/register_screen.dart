@@ -43,7 +43,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       ),
       body: LoadingSpinnerOverlay(
         isLoading: _isLoading,
-        loadingMessage: 'Creando tu cuenta...',
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),

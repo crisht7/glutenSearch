@@ -1,34 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import '../core/app_theme.dart';
 
 class LoadingSpinner extends StatelessWidget {
-  final String? message;
   final double size;
 
-  const LoadingSpinner({super.key, this.message, this.size = 40});
+  const LoadingSpinner({super.key, this.size = 20});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        SizedBox(
-          width: size,
-          height: size,
-          child: const CircularProgressIndicator(
-            color: AppTheme.primaryGreen,
-            strokeWidth: 3,
-          ),
-        ),
-        if (message != null) ...[
-          const SizedBox(height: 16),
-          Text(
-            message!,
-            style: const TextStyle(fontSize: 16, color: Colors.grey),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ],
+    return LoadingAnimationWidget.staggeredDotsWave(
+      color: AppTheme.primaryGreen,
+      size: size,
     );
   }
 }
@@ -36,13 +19,10 @@ class LoadingSpinner extends StatelessWidget {
 class LoadingSpinnerOverlay extends StatelessWidget {
   final Widget child;
   final bool isLoading;
-  final String? loadingMessage;
-
   const LoadingSpinnerOverlay({
     super.key,
     required this.child,
     required this.isLoading,
-    this.loadingMessage,
   });
 
   @override
@@ -54,10 +34,34 @@ class LoadingSpinnerOverlay extends StatelessWidget {
           Container(
             color: Colors.black.withOpacity(0.3),
             child: Center(
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: LoadingSpinner(message: loadingMessage),
+              child: Container(
+                constraints: const BoxConstraints(
+                  maxWidth: 120,
+                  maxHeight: 120,
+                ),
+                child: Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        LoadingSpinner(size: 32),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Cargando...',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.primaryGreen,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),

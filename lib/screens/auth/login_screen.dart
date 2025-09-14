@@ -31,7 +31,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       body: LoadingSpinnerOverlay(
         isLoading: _isLoading,
-        loadingMessage: 'Iniciando sesión...',
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),

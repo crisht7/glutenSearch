@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'firebase_options.dart'; // Generado por FlutterFire CLI
-import 'app.dart'; // Importamos nuestro widget principal
+import 'firebase_options.dart';
+import 'app.dart';
 import 'providers/product_provider.dart';
 import 'providers/repository_providers.dart';
 
@@ -36,7 +36,7 @@ Future<void> main() async {
   } catch (e) {
     print('No se pudo configurar Firestore para modo offline: $e');
   } // PASO 3: Crear un contenedor de Riverpod para hacer pruebas en la consola
-  // Esto nos permite interactuar con nuestros providers antes de que la UI exista.
+  // Esto nos permite interactuar con nuestros providers antes de que la UI exista
   final container = ProviderContainer();
 
   // -- INICIO DE LA PRUEBA DE HUMO EN CONSOLA --
@@ -65,7 +65,7 @@ Future<void> main() async {
 
   // PASO 4: Ejecutar la aplicación de Flutter
   // Envolvemos la app en el ProviderScope para que todos los widgets
-  // puedan acceder a los providers.
+  // puedan acceder a los providers
   runApp(
     ProviderScope(
       parent:
