@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/app_theme.dart';
-import '../providers/product_provider.dart';
-import '../providers/auth_provider.dart';
-import '../widgets/product_card.dart';
-import '../widgets/loading_spinner.dart';
-import 'cart/cart_screen.dart';
-import 'side/profile_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import '../../core/app_theme.dart';
+import '../../core/app_router.dart';
+import '../../providers/product_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../widgets/product_card.dart';
+import '../../widgets/loading_spinner.dart';
+import '../../widgets/app_drawer.dart';
+import 'cart_screen.dart';
+import 'profile_screen.dart';
 
-class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+class CatalogScreen extends ConsumerStatefulWidget {
+  const CatalogScreen({super.key});
 
   @override
-  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<CatalogScreen> createState() => _CatalogScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   int _currentIndex = 0;
   String _selectedSupermarket = 'mercadona';
   String _searchQuery = '';
@@ -32,23 +35,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Productos Sin Gluten'),
+        title: const Text('Catálogo'),
         actions: [
-          if (authState.value != null)
-            Chip(
-              avatar: const Icon(Icons.person, color: Colors.white, size: 18),
-              label: Text(
-                authState.value!.isAnonymous ? 'Invitado' : 'Usuario',
-                style: const TextStyle(color: Colors.white, fontSize: 12),
-              ),
-              backgroundColor: AppTheme.secondaryGreen,
-            ),
+          _buildUserSection(context, authState.value),
           const SizedBox(width: 16),
         ],
       ),
+      drawer: const AppDrawer(currentRoute: AppRouter.catalog),
       body: IndexedStack(
         index: _currentIndex,
-        children: [_buildHomeTab(), const CartScreen(), const ProfileScreen()],
+        children: [
+          _buildCatalogTab(),
+          const CartScreen(),
+          const ProfileScreen(),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
@@ -58,7 +58,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           });
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Catálogo'),
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_cart),
             label: 'Carrito',
@@ -69,7 +69,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildHomeTab() {
+  Widget _buildCatalogTab() {
     return Column(
       children: [
         // Barra de búsqueda
@@ -221,5 +221,67 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildUserSection(BuildContext context, firebase_auth.User? user) {
+    return GestureDetector(
+      onTap: () {
+        if (user == null) {
+          // Navegar a la pantalla de login si no hay usuario
+          Navigator.pushNamed(context, AppRouter.login);
+        } else {
+          // Si hay usuario, navegar al perfil
+          Navigator.pushNamed(context, AppRouter.profile);
+        }
+      },
+      child: Chip(
+        avatar: Icon(
+          user == null
+              ? Icons.login
+              : user.isAnonymous
+              ? Icons.person_outline
+              : Icons.person,
+          color: Colors.white,
+          size: 18,
+        ),
+        label: Text(
+          _getUserDisplayName(user),
+          style: const TextStyle(color: Colors.white, fontSize: 12),
+        ),
+        backgroundColor: user == null
+            ? AppTheme.primaryGreen
+            : AppTheme.secondaryGreen,
+      ),
+    );
+  }
+
+  String _getUserDisplayName(firebase_auth.User? user) {
+    if (user == null) {
+      return 'Iniciar sesión';
+    }
+
+    if (user.isAnonymous) {
+      return 'Invitado';
+    }
+
+    // Si es un usuario registrado, intentar obtener el nombre
+    String displayName = user.displayName ?? '';
+    if (displayName.isNotEmpty) {
+      return displayName.length > 12
+          ? '${displayName.substring(0, 12)}...'
+          : displayName;
+    }
+
+    // Si no hay displayName, usar la parte antes del @ del email
+    String email = user.email ?? '';
+    if (email.isNotEmpty) {
+      String username = email.split('@')[0];
+      return username.length > 12
+          ? '${username.substring(0, 12)}...'
+          : username;
+    }
+
+    // Fallback
+    return 'Usuario';
   }
 }

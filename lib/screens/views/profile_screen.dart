@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
+import '../../core/app_router.dart';
 import '../../models/product.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/user_provider.dart';
 import '../../providers/repository_providers.dart';
 import '../../widgets/loading_spinner.dart';
 import '../../widgets/product_card.dart';
+import '../../widgets/app_drawer.dart';
 import '../auth/login_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -19,7 +21,6 @@ class ProfileScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mi Perfil'),
-        automaticallyImplyLeading: false,
         actions: [
           if (authState.value != null)
             IconButton(
@@ -29,6 +30,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
         ],
       ),
+      drawer: const AppDrawer(currentRoute: AppRouter.profile),
       body: authState.when(
         data: (user) {
           if (user == null) {

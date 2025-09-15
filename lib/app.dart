@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/app_theme.dart';
 import 'core/app_router.dart';
 import 'providers/auth_provider.dart';
-import 'screens/home_screen.dart';
+import 'screens/views/main_screen.dart';
 import 'screens/auth/login_screen.dart';
 
 class GlutenSearchApp extends ConsumerWidget {
@@ -33,7 +33,7 @@ class AuthenticationWrapper extends ConsumerWidget {
     return authState.when(
       data: (user) {
         if (user != null) {
-          return const HomeScreen();
+          return const MainScreen();
         } else {
           return const LoginScreen();
         }

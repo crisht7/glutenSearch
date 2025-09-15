@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async'; // Import for TimeoutException
 import '../../core/app_theme.dart';
+import '../../core/app_router.dart';
 import '../../providers/repository_providers.dart';
 import '../../widgets/loading_spinner.dart';
 
@@ -364,7 +365,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
       // Paso 3: Guardar información adicional en Firestore
       bool firestoreSuccess = true;
-      String firestoreErrorMsg = '';
       try {
         final userDataRepository = ref.read(userDataRepositoryProvider);
 
@@ -382,7 +382,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ]);
       } catch (firestoreError) {
         firestoreSuccess = false;
-        firestoreErrorMsg = firestoreError.toString();
         print('Error al guardar datos en Firestore: $firestoreError');
 
         // Verificamos si el error está relacionado con PigeonUserDetails
@@ -432,18 +431,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           SnackBar(
             content: Text(message),
             backgroundColor: AppTheme.primaryGreen,
-            duration: const Duration(seconds: 5),
+            duration: const Duration(seconds: 2),
           ),
         );
 
-        // Si no tuvimos éxito con Firestore pero la cuenta se creó, navegar a la pantalla principal
-        if (!firestoreSuccess) {
-          print(
-            'Navegando a la pantalla principal a pesar del error de Firestore: $firestoreErrorMsg',
-          );
-          // Aquí podríamos navegar a la pantalla principal o realizar otras acciones
-          // Ejemplo: Navigator.of(context).pushReplacementNamed('/home');
-        }
+        // Navegación explícita a la pantalla principal
+        Navigator.of(context).pushReplacementNamed(AppRouter.main);
       }
     } catch (e) {
       print('Error durante el registro: $e');

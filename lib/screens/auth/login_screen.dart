@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
+import '../../core/app_router.dart';
 import '../../providers/repository_providers.dart';
 import '../../widgets/loading_spinner.dart';
 import 'register_screen.dart';
@@ -245,9 +246,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           const SnackBar(
             content: Text('¡Bienvenido de vuelta!'),
             backgroundColor: AppTheme.primaryGreen,
-            duration: Duration(seconds: 2),
+            duration: Duration(seconds: 1),
           ),
         );
+
+        // Navegación explícita a la pantalla principal
+        Navigator.of(context).pushReplacementNamed(AppRouter.main);
       }
     } catch (e) {
       if (mounted) {
@@ -282,9 +286,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           const SnackBar(
             content: Text('Sesión iniciada como invitado'),
             backgroundColor: AppTheme.primaryGreen,
-            duration: Duration(seconds: 2),
+            duration: Duration(seconds: 1),
           ),
         );
+
+        // Navegación explícita a la pantalla principal
+        Navigator.of(context).pushReplacementNamed(AppRouter.main);
       }
     } catch (e) {
       if (mounted) {

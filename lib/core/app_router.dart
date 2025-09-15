@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import '../screens/home_screen.dart';
+import '../screens/views/main_screen.dart';
+import '../screens/views/catalog_screen.dart';
+import '../screens/views/cart_screen.dart';
+import '../screens/views/profile_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
-import '../screens/cart/cart_screen.dart';
-import '../screens/side/profile_screen.dart';
 
 class AppRouter {
-  static const String home = '/';
+  static const String main = '/';
+  static const String catalog = '/catalog';
   static const String login = '/login';
   static const String register = '/register';
   static const String cart = '/cart';
@@ -14,9 +16,14 @@ class AppRouter {
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
-      case home:
+      case main:
         return MaterialPageRoute(
-          builder: (_) => const HomeScreen(),
+          builder: (_) => const MainScreen(),
+          settings: settings,
+        );
+      case catalog:
+        return MaterialPageRoute(
+          builder: (_) => const CatalogScreen(),
           settings: settings,
         );
       case login:

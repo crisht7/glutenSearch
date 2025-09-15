@@ -9,8 +9,7 @@ class CartItem {
   factory CartItem.fromJson(Map<String, dynamic> json) {
     try {
       // Verificar que product exista y sea un Map
-      if (json['product'] == null ||
-          !(json['product'] is Map<String, dynamic>)) {
+      if (json['product'] == null || json['product'] is! Map<String, dynamic>) {
         throw Exception('El campo product es nulo o no es un Map');
       }
 
