@@ -84,6 +84,8 @@ class AuthRepository {
       // Actualizar el perfil después de la creación exitosa
       try {
         await userCredential.user!.updateDisplayName(email.split('@')[0]);
+        // Recargar el usuario para asegurar que los cambios se reflejen
+        await userCredential.user!.reload();
       } catch (e) {
         print(
           'No se pudo actualizar el nombre de usuario, pero la cuenta se creó: $e',
@@ -163,5 +165,12 @@ class AuthRepository {
   // Cierra la sesión del usuario actual.
   Future<void> signOut() async {
     await _firebaseAuth.signOut();
+  }
+
+  // Recarga la información del usuario actual desde Firebase
+  Future<void> reloadCurrentUser() async {
+    if (currentUser != null) {
+      await currentUser!.reload();
+    }
   }
 }

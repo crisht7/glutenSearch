@@ -68,18 +68,6 @@ class AppDrawer extends ConsumerWidget {
             },
           ),
           _DrawerItem(
-            icon: Icons.shopping_cart,
-            title: 'Carrito',
-            route: AppRouter.cart,
-            currentRoute: currentRoute,
-            onTap: () {
-              Navigator.pop(context);
-              if (currentRoute != AppRouter.cart) {
-                Navigator.pushReplacementNamed(context, AppRouter.cart);
-              }
-            },
-          ),
-          _DrawerItem(
             icon: Icons.person,
             title: 'Perfil',
             route: AppRouter.profile,

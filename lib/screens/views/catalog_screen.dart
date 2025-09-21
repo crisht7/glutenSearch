@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../../core/app_theme.dart';
 import '../../core/app_router.dart';
 import '../../providers/product_provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../widgets/product_card.dart';
 import '../../widgets/loading_spinner.dart';
 import '../../widgets/app_drawer.dart';
@@ -31,14 +29,16 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authStateChangesProvider);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Catálogo'),
         actions: [
-          _buildUserSection(context, authState.value),
-          const SizedBox(width: 16),
+          IconButton(
+            icon: const Icon(Icons.shopping_cart),
+            onPressed: () {
+              Navigator.pushNamed(context, AppRouter.cart);
+            },
+          ),
         ],
       ),
       drawer: const AppDrawer(currentRoute: AppRouter.catalog),
@@ -221,67 +221,5 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         ),
       ),
     );
-  }
-
-  Widget _buildUserSection(BuildContext context, firebase_auth.User? user) {
-    return GestureDetector(
-      onTap: () {
-        if (user == null) {
-          // Navegar a la pantalla de login si no hay usuario
-          Navigator.pushNamed(context, AppRouter.login);
-        } else {
-          // Si hay usuario, navegar al perfil
-          Navigator.pushNamed(context, AppRouter.profile);
-        }
-      },
-      child: Chip(
-        avatar: Icon(
-          user == null
-              ? Icons.login
-              : user.isAnonymous
-              ? Icons.person_outline
-              : Icons.person,
-          color: Colors.white,
-          size: 18,
-        ),
-        label: Text(
-          _getUserDisplayName(user),
-          style: const TextStyle(color: Colors.white, fontSize: 12),
-        ),
-        backgroundColor: user == null
-            ? AppTheme.primaryGreen
-            : AppTheme.secondaryGreen,
-      ),
-    );
-  }
-
-  String _getUserDisplayName(firebase_auth.User? user) {
-    if (user == null) {
-      return 'Iniciar sesión';
-    }
-
-    if (user.isAnonymous) {
-      return 'Invitado';
-    }
-
-    // Si es un usuario registrado, intentar obtener el nombre
-    String displayName = user.displayName ?? '';
-    if (displayName.isNotEmpty) {
-      return displayName.length > 12
-          ? '${displayName.substring(0, 12)}...'
-          : displayName;
-    }
-
-    // Si no hay displayName, usar la parte antes del @ del email
-    String email = user.email ?? '';
-    if (email.isNotEmpty) {
-      String username = email.split('@')[0];
-      return username.length > 12
-          ? '${username.substring(0, 12)}...'
-          : username;
-    }
-
-    // Fallback
-    return 'Usuario';
   }
 }

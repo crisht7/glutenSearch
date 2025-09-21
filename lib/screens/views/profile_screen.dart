@@ -5,7 +5,6 @@ import '../../core/app_router.dart';
 import '../../models/product.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/user_provider.dart';
-import '../../providers/repository_providers.dart';
 import '../../widgets/loading_spinner.dart';
 import '../../widgets/product_card.dart';
 import '../../widgets/app_drawer.dart';
@@ -22,12 +21,12 @@ class ProfileScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Mi Perfil'),
         actions: [
-          if (authState.value != null)
-            IconButton(
-              onPressed: () => _showLogoutDialog(context, ref),
-              icon: const Icon(Icons.logout),
-              tooltip: 'Cerrar sesión',
-            ),
+          IconButton(
+            icon: const Icon(Icons.shopping_cart),
+            onPressed: () {
+              Navigator.pushNamed(context, AppRouter.cart);
+            },
+          ),
         ],
       ),
       drawer: const AppDrawer(currentRoute: AppRouter.profile),
@@ -67,49 +66,6 @@ class ProfileScreen extends ConsumerWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cerrar Sesión'),
-        content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              try {
-                await ref.read(authRepositoryProvider).signOut();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Sesión cerrada'),
-                      backgroundColor: AppTheme.primaryGreen,
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error al cerrar sesión: $e'),
-                      backgroundColor: AppTheme.errorRed,
-                    ),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorRed),
-            child: const Text('Cerrar Sesión'),
-          ),
-        ],
       ),
     );
   }

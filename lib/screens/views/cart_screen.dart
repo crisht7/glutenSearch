@@ -16,9 +16,17 @@ class CartScreen extends ConsumerWidget {
 
     // Si no hay usuario autenticado, mostrar mensaje
     if (authState.value == null) {
-      return const Scaffold(
-        appBar: null,
-        body: Center(
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Mi Carrito'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+        ),
+        body: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

@@ -41,6 +41,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: AppTheme.primaryGreen,
+        actions: const [],
       ),
       body: LoadingSpinnerOverlay(
         isLoading: _isLoading,
@@ -421,7 +422,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         }
       }
 
-      // Paso 4: Notificar éxito
+      // Paso 4: Esperar a que el estado de autenticación se actualice
+      // Esto asegura que el usuario aparezca como registrado en lugar de invitado
+      await authRepository.reloadCurrentUser();
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Verificar que el usuario ya no sea anónimo
+      final currentUser = authRepository.currentUser;
+      if (currentUser != null && !currentUser.isAnonymous) {
+        print('✅ Usuario registrado correctamente: ${currentUser.email}');
+      }
+
+      // Paso 5: Notificar éxito
       if (mounted) {
         final message = firestoreSuccess
             ? '¡Cuenta creada exitosamente!'
