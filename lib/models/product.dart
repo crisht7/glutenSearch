@@ -358,12 +358,22 @@ class Product {
 
   static double? _extractRating(Map<String, dynamic> json) {
     // Open Food Facts no tiene rating directo, pero podemos usar otros indicadores
-    final popularityKey = json['popularity_key'] as num?;
-    if (popularityKey != null) {
-      // Convertir popularidad a una escala de 0-5
-      return (popularityKey.toDouble() / 100000).clamp(0.0, 5.0);
+    final dynamic raw = json['popularity_key'];
+    if (raw == null) return null;
+
+    double? value;
+    if (raw is num) {
+      value = raw.toDouble();
+    } else if (raw is String) {
+      final parsed = num.tryParse(raw.trim());
+      if (parsed != null) value = parsed.toDouble();
     }
-    return null;
+
+    if (value == null) return null;
+
+    // Convertir popularidad a una escala de 0-5
+    final score = (value / 100000).clamp(0.0, 5.0);
+    return score;
   }
 
   Map<String, dynamic> toJson() {

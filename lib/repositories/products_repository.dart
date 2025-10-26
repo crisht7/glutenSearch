@@ -1,6 +1,17 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 import '../models/product.dart';
+
+// Config común para llamadas OFF
+const _requestTimeout = Duration(seconds: 15);
+const _offHost = 'world.openfoodfacts.org';
+const _offHeaders = {
+  'User-Agent': 'GlutenSearch/1.0 (gluten.search.app@gmail.com)',
+  'Accept': 'application/json',
+};
 
 class ProductsRepository {
   final http.Client _client;
@@ -11,6 +22,19 @@ class ProductsRepository {
   static const Duration _cacheExpiration = Duration(minutes: 30);
 
   ProductsRepository({http.Client? client}) : _client = client ?? http.Client();
+
+  // Utilidad: GET con timeout y log
+  Future<String> _safeGet(Uri uri, http.Client client) async {
+    debugPrint('[OFF][GET] $uri');
+    final res = await client
+        .get(uri, headers: _offHeaders)
+        .timeout(_requestTimeout);
+    debugPrint('[OFF][${res.statusCode}] $uri');
+    if (res.statusCode != 200) {
+      throw HttpException('OpenFoodFacts ${res.statusCode}');
+    }
+    return res.body;
+  }
 
   Future<List<Product>> getGlutenFreeProducts(String supermarketId) async {
     // Verificar cache
@@ -44,7 +68,10 @@ class ProductsRepository {
 
     for (final searchTerm in searchTerms) {
       try {
-        final products = await _searchProductsByTerm(supermarketId, searchTerm);
+        final products = await _searchProductsByTerm(
+          searchTerm,
+          store: supermarketId,
+        );
         allProducts.addAll(products);
 
         // Añadir un pequeño delay entre peticiones para no sobrecargar la API
@@ -72,53 +99,51 @@ class ProductsRepository {
     return validProducts.take(100).toList(); // Limitar a 100 productos
   }
 
+  // Reemplaza el GET directo por _safeGet dentro de la búsqueda por término
   Future<List<Product>> _searchProductsByTerm(
-    String supermarketId,
-    String searchTerm,
-  ) async {
-    // URL mejorada para Open Food Facts
-    final url = Uri.parse('https://world.openfoodfacts.org/cgi/search.pl')
-        .replace(
-          queryParameters: {
-            'search_terms': searchTerm,
-            'search_simple': '1',
-            'action': 'process',
-            'json': '1',
-            'page_size': '50',
-            'sort_by': 'popularity',
-            'tagtype_0': 'stores',
-            'tag_contains_0': 'contains',
-            'tag_0': _normalizeStoreTag(supermarketId),
-            'tagtype_1': 'labels',
-            'tag_contains_1': 'contains',
-            'tag_1': 'gluten-free',
-            'countries': 'spain', // Limitar a productos disponibles en España
-          },
-        );
+    String term, {
+    String? store,
+  }) async {
+    final params = <String, String>{
+      'action': 'process',
+      'json': '1',
+      'search_simple': '1',
+      'page_size': '20',
+      'sort_by': 'popularity',
+      'search_terms': term,
+    };
 
-    print('Fetching from URL: $url');
+    int tagIndex = 0;
+    params.addAll({
+      'tagtype_$tagIndex': 'labels',
+      'tag_contains_$tagIndex': 'contains',
+      'tag_$tagIndex': 'gluten-free',
+    });
+    if (store != null && store.isNotEmpty) {
+      tagIndex++;
+      params.addAll({
+        'tagtype_$tagIndex': 'stores',
+        'tag_contains_$tagIndex': 'contains',
+        'tag_$tagIndex': store,
+      });
+    }
 
-    final response = await _client.get(
-      url,
-      headers: {'User-Agent': 'GlutenSearch/1.0 (gluten.search.app@gmail.com)'},
-    );
+    final uri = Uri.https(_offHost, '/cgi/search.pl', params);
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-
-      if (data['products'] != null) {
-        final List productsJson = data['products'];
-        return productsJson
-            .map((json) => Product.fromJson(json))
-            .where((product) => _isGlutenFree(product))
-            .toList();
-      } else {
-        return [];
-      }
-    } else {
-      throw Exception(
-        'Error HTTP ${response.statusCode}: ${response.reasonPhrase}',
-      );
+    try {
+      final body = await _safeGet(uri, _client);
+      final jsonMap = json.decode(body) as Map<String, dynamic>;
+      return (jsonMap['products'] as List<dynamic>)
+          .map((productJson) => Product.fromJson(productJson))
+          .where(_isValidProduct)
+          .where(_isGlutenFree)
+          .toList();
+    } on TimeoutException {
+      debugPrint('[OFF][TIMEOUT] $uri');
+      return <Product>[]; // No bloquea toda la búsqueda
+    } on SocketException catch (e) {
+      debugPrint('[OFF][SOCKET] $e $uri');
+      rethrow;
     }
   }
 
@@ -165,6 +190,7 @@ class ProductsRepository {
     // Validar que el producto tenga información mínima necesaria
     return product.name.isNotEmpty &&
         product.name != 'Nombre no disponible' &&
+    !product.name.startsWith('Error al cargar producto') &&
         product.id.isNotEmpty &&
         product.name.length > 2 &&
         !product.name.toLowerCase().contains('test') &&
@@ -297,49 +323,41 @@ class ProductsRepository {
     String? supermarketId,
   }) async {
     try {
-      final url = Uri.parse('https://world.openfoodfacts.org/cgi/search.pl')
-          .replace(
-            queryParameters: {
-              'search_terms': '$query sin gluten',
-              'search_simple': '1',
-              'action': 'process',
-              'json': '1',
-              'page_size': '20',
-              'sort_by': 'popularity',
-              'tagtype_0': 'labels',
-              'tag_contains_0': 'contains',
-              'tag_0': 'gluten-free',
-              'countries': 'spain',
-              if (supermarketId != null) ...{
-                'tagtype_1': 'stores',
-                'tag_contains_1': 'contains',
-                'tag_1': _normalizeStoreTag(supermarketId),
-              },
-            },
-          );
-
-      final response = await _client.get(
-        url,
-        headers: {
-          'User-Agent': 'GlutenSearch/1.0 (gluten.search.app@gmail.com)',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        if (data['products'] != null) {
-          final List productsJson = data['products'];
-          return productsJson
-              .map((json) => Product.fromJson(json))
-              .where(_isValidProduct)
-              .where(_isGlutenFree)
-              .take(20)
-              .toList();
-        }
+      final params = <String, String>{
+        'search_terms': '$query sin gluten',
+        'search_simple': '1',
+        'action': 'process',
+        'json': '1',
+        'page_size': '20',
+        'sort_by': 'popularity',
+        'tagtype_0': 'labels',
+        'tag_contains_0': 'contains',
+        'tag_0': 'gluten-free',
+        'countries': 'spain',
+      };
+      if (supermarketId != null) {
+        params.addAll({
+          'tagtype_1': 'stores',
+          'tag_contains_1': 'contains',
+          'tag_1': _normalizeStoreTag(supermarketId),
+        });
       }
 
-      return [];
+      final url = Uri.https(_offHost, '/cgi/search.pl', params);
+      final body = await _safeGet(url, _client);
+      final data = json.decode(body);
+
+      if (data['products'] != null) {
+        final List productsJson = data['products'];
+        return productsJson
+            .map((json) => Product.fromJson(json))
+            .where(_isValidProduct)
+            .where(_isGlutenFree)
+            .take(20)
+            .toList();
+      }
+
+      return <Product>[];
     } catch (e) {
       print('Error searching products by name: $e');
       return [];

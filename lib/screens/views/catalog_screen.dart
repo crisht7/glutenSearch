@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../core/app_router.dart';
@@ -79,10 +80,23 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           child: Column(
             children: [
               TextField(
+                textInputAction: TextInputAction.search,
                 onChanged: (value) {
                   setState(() {
                     _searchQuery = value;
                   });
+                  // Log de escritura en el buscador (evita logs cuando está vacío)
+                  if (value.trim().isNotEmpty) {
+                    debugPrint('[SEARCH_UI] typing query="$value"');
+                  }
+                },
+                onSubmitted: (value) {
+                  // El usuario pulsa el botón "Buscar" del teclado
+                  debugPrint('[SEARCH_UI] submitted query="$value"');
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                  FocusScope.of(context).unfocus();
                 },
                 decoration: const InputDecoration(
                   hintText: 'Buscar productos...',
@@ -110,6 +124,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           setState(() {
                             _selectedSupermarket = supermarket['id'];
                           });
+                          debugPrint(
+                            '[SEARCH_SUPERMARKET] selected id="${supermarket['id']}" name="${supermarket['name']}"',
+                          );
                         },
                         avatar: Icon(
                           supermarket['icon'],
@@ -182,6 +199,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
         return RefreshIndicator(
           onRefresh: () async {
+            debugPrint(
+              '[REFRESH] manually refreshing products for supermarket="$_selectedSupermarket"',
+            );
             ref.invalidate(productsProvider(_selectedSupermarket));
           },
           child: ListView.builder(

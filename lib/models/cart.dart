@@ -5,7 +5,11 @@ class Cart {
   final List<CartItem> items;
   final DateTime lastModified;
 
-  Cart({required this.id, required this.items, required this.lastModified});
+  Cart({
+    required this.id,
+    required this.items,
+    required this.lastModified
+  });
 
   // Constructor para un carrito vacío
   factory Cart.empty(String id) {
