@@ -8,7 +8,7 @@ import 'screens/auth/login_screen.dart';
 
 class GlutenSearchApp extends ConsumerWidget {
   const GlutenSearchApp({super.key});
-
+  // Me huele el sobaco
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(

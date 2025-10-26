@@ -7,7 +7,7 @@ import 'firebase_options.dart';
 import 'app.dart';
 import 'providers/product_provider.dart';
 import 'providers/repository_providers.dart';
-
+// Hola
 Future<void> main() async {
   // PASO 1: Asegurar que Flutter esté inicializado
   WidgetsFlutterBinding.ensureInitialized();
